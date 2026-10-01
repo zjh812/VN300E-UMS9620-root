@@ -1,0 +1,11 @@
+# 批处理必须是 CRLF —— cmd.exe 对 LF 行尾的 label / goto 处理不可靠
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 其余文本统一 LF，避免跨平台差异
+*.py  text eol=lf
+*.md  text eol=lf
+*.json text eol=lf
+*.txt text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
