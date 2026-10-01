@@ -14,12 +14,18 @@
 
 ## 1. 先备份你的设备（只读）
 
-用 [CVE-2022-38694 工具包](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader)
-的 `spd_dump` 进 BROM 做全分区备份：
+**用仓库里现成的一键脚本：[`../tools/backup_all_partitions.bat`](../tools/backup_all_partitions.bat)**
+
+它只读 GPT + dump 全部 73 个分区 + 生成 `SHA256SUMS.txt`，
+**不含任何 `w`(write) / `e`(erase) / repartition 命令**。
+
+用法见 [主 README 的「第 0 步」](../README.md#-第-0-步完整备份必做先做这个)。
+
+它内部执行的就是这一条命令（你自己跑也一样）：
 
 ```bat
 spd_dump --wait 300 exec_addr 0x65012f48 fdl fdl1-dl.bin 0x65000800 ^
-         fdl fdl2-dl.bin 0xb4fffe00 exec exec path "<备份目录>" r all reset
+         fdl fdl2-dl.bin 0xb4fffe00 exec exec path "<备份目录>" r splloader r all reset
 ```
 
 你需要的是里面的 **`uboot_b.bin`** 和 **`init_boot_b.bin`**（当前激活槽是 `_b`；

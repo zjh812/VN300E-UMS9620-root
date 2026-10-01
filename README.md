@@ -10,6 +10,10 @@
 
 ## ⚠️ 先读这段
 
+- **🛑 动手前先做完整备份** —— 仓库提供一键脚本
+  [`tools/backup_all_partitions.bat`](tools/backup_all_partitions.bat)（纯只读，
+  dump 全部 73 个分区 + SHA256）。**没有备份的人不该往下走**，
+  详见 [第 0 步](#-第-0-步完整备份必做先做这个)。
 - 本仓库**不含任何签名私钥**，也不破解签名。做法是「让原厂签名继续有效，
   在**签名校验通过之后**于内存里改几条指令」。
 - 你会**改动 U-Boot 与 init_boot 两个分区**，并**清一次 userdata**。
@@ -49,18 +53,43 @@ SPL 校验原样的 payload → 通过 → 跳到 `0x200` 的跳转指令 → sh
 
 ## 二、完整步骤
 
-### 0. 前置
-
-| 需要 | 说明 |
-|---|---|
-| 全分区备份 | 至少 `uboot_b`、`init_boot_b`、`splloader`、`miscdata`、`misc`（见下方「所需工具与来源」） |
-| 下载工具 | `spd_dump.exe` + FDL + BROM exploit payload —— **来自第三方项目，本仓库不打包**，见下方 |
-| 驱动 | SPD USB 驱动（SPRD 驱动与 libusb 驱动冲突，只能装一个） |
-| Python | 3.10+，`pip install capstone` |
-
-进 BROM：**关机 → 按住 电源 + 音量上 → 不松手插 USB**。
-
----
+> ## 🛑 第 0 步：完整备份（**必做，先做这个**）
+>
+> **不备份就不要往下走。**
+>
+> 本方案会写 `uboot_b` 和 `init_boot_b` 两个分区，并触发一次清数据。
+> **没有备份 = 没有退路。**
+>
+> ### 仓库提供了现成的一键备份脚本
+>
+> **[`tools/backup_all_partitions.bat`](tools/backup_all_partitions.bat)**
+>
+> | | |
+> |---|---|
+> | **做什么** | 只读 GPT → dump 全部 73 个分区 → 生成 `SHA256SUMS.txt` → 打日志 |
+> | **不做什么** | **不含任何 `w`(write) / `e`(erase) / repartition 命令 —— 纯只读** |
+>
+> **用法**
+>
+> 1. 从 [CVE-2022-38694 工具包](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader)
+>    取 `spd_dump.exe`、`Channel9.dll`、`Channel.ini`、`fdl1-dl.bin`、`fdl2-dl.bin`、
+>    `custom_exec_no_verify_65012f48.bin`，放到脚本**同目录**或**同目录的 `bin\` 子目录**
+> 2. 设备关机 → 按住 **电源 + 音量上** 不松手插 USB（进 BROM）
+> 3. 双击 `backup_all_partitions.bat`，跟着提示走
+> 4. 备份落在 `backup\T9100_<时间戳>\`，含 `SHA256SUMS.txt`
+>
+> **刷写前必须确认这几个文件已生成**（回滚全靠它们）：
+>
+> ```
+> uboot_b.bin      init_boot_b.bin      splloader.bin
+> miscdata.bin     misc.bin
+> ```
+>
+> **为什么这一步不能省**：BootROM 是掩膜 ROM，物理上改不了、永远可用 ——
+> 所以只要 `splloader` 的备份在，即使 `uboot` 完全起不来，也能从 BROM 写回恢复。
+> 反过来，**没有备份的人不该动手**。
+>
+> ---
 
 ### 0.1 所需工具与来源（本仓库**不打包**第三方工具）
 
@@ -165,6 +194,7 @@ adb shell /data/adb/ksu/bin/su -c id     # 期望 uid=0(root)
 
 | 脚本 | 用途 |
 |---|---|
+| **`tools/backup_all_partitions.bat`** | **🛑 先跑这个** —— 一键全分区只读备份（dump 全部 73 分区 + SHA256 + 日志）。**不含任何写/擦命令** |
 | `tools/T9100_build_probe_magic64.py` | **通用 magic64 镜像构建器**：`--patch code_off=expected[:target]`，自带 SHA256 / 精确指令校验 |
 | `tools/magic64_verify.py` | **只读验证器 + AArch64 shellcode 模拟执行**：解析 DHTB/SIMGHDR/patch table，跑一遍 shellcode 并比对 RAM |
 | `tools/check_t9100_uboot_offsets.py` | 只读 offset 验证器（35 项检查 + 模拟执行） |
