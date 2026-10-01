@@ -1,6 +1,10 @@
-# 批处理必须是 CRLF —— cmd.exe 对 LF 行尾的 label / goto 处理不可靠
-*.bat text eol=crlf
-*.cmd text eol=crlf
+# 批处理必须是 CRLF —— cmd.exe 对 LF 行尾的 label / goto 处理不可靠。
+# 用 -text（不转换）而不是 "text eol=crlf"：
+#   "text eol=crlf" 会把仓库里的 blob 规范化成 LF，只在本机 checkout 时转 CRLF，
+#   于是从 raw.githubusercontent 直接下载拿到的是 LF 版 —— 会坏。
+#   -text 让 git 原样存储 CRLF，raw 下载与 checkout 都正确。
+*.bat -text
+*.cmd -text
 
 # 其余文本统一 LF，避免跨平台差异
 *.py  text eol=lf
