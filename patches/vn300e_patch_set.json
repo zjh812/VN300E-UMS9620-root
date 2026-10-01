@@ -1,0 +1,142 @@
+{
+  "_comment": "UNISOC UMS9620 (T9100 / VN300E, Mario_12_2_5G) U-Boot magic64 patch set. code_offset is relative to the DHTB payload (file_off = 0x200 + code_offset). LOAD_BASE derived from the device's own uboot_log partition.",
+  "device": {
+    "soc": "UNISOC UMS9620 / T9100",
+    "product": "Mario_12_2_5G",
+    "model": "VN300E",
+    "android": "14 / API 34",
+    "platform": "qogirn6pro",
+    "target": "ums9620_2h10",
+    "partition": "uboot_b",
+    "partition_size": "0x300000"
+  },
+  "image": {
+    "format": "DHTB + SIMGHDR",
+    "dhtb_header_size": "0x200",
+    "payload_file_range": "0x200 .. 0x171830",
+    "data_size": "0x171630",
+    "dhtb_hash_is_sha256_of_payload": true,
+    "simghdr_offset": "0x171830",
+    "sechdr_size": "0x60",
+    "cert_size_field_sig_struct_size": "0x458",
+    "code_offset_base": "file_off = 0x200 + code_offset"
+  },
+  "load_base": {
+    "value": "0xB5000000",
+    "confidence": "high - derived from device's own uboot_log partition",
+    "evidence": [
+      "sprd_get_vboot_key(): load_buf is 0x0xb4fffe00",
+      "sprd_get_vboot_key(): sechdr_addr is 0x0xb5171630",
+      "sprd_get_vboot_key(): cert_addr: 0xb5171690",
+      "sysdump-uboot: addr is 0xb5000000, size is 0x1000000",
+      "0xb4fffe00 + 0x200 (DHTB header) = 0xb5000000",
+      "1115 aligned 64-bit absolute pointers inside the stock payload land in 0xb5000000..0xb5171630"
+    ]
+  },
+  "stock_uboot_sha256": "5935075bed5b12d35b961d0e39a4e95154b8cfb94ac177f96919700a24b8e321",
+  "patches": [
+    {
+      "code_offset": "0x627E8",
+      "stock_word": "0xB948CA95",
+      "stock_disasm": "ldr w21, [x20, #0x8c8]",
+      "target_word": "0x52800035",
+      "target_disasm": "mov w21, #1",
+      "function": "get_lock_status() @0x627A4 (early-return path)",
+      "purpose": "force UNLOCK when read_lock_flag() fails"
+    },
+    {
+      "code_offset": "0x627F0",
+      "stock_word": "0x97FF3759",
+      "stock_disasm": "bl #0x30554 (free)",
+      "target_word": "0xB908CA95",
+      "target_disasm": "str w21, [x20, #0x8c8]",
+      "function": "get_lock_status() @0x627A4 (early-return path)",
+      "purpose": "write g_DeviceStatus = 1 (free() intentionally skipped, ~476 B leak per call)"
+    },
+    {
+      "code_offset": "0x62830",
+      "stock_word": "0x350002A0",
+      "stock_disasm": "cbnz w0, #0x62884",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "get_lock_status() @0x627A4 (verify path)",
+      "purpose": "force UNLOCK when read_lock_flag() succeeds"
+    },
+    {
+      "code_offset": "0xB4B0",
+      "stock_word": "0x54000060",
+      "stock_disasm": "b.eq #0xB4BC",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "fn 0xB4A0 (reached via fall-through from 0xB498, called from 0x1FAA4)",
+      "purpose": "remove 'INFO: Press power button to pause.' + 10s countdown"
+    },
+    {
+      "code_offset": "0xB504",
+      "stock_word": "0x54000180",
+      "stock_disasm": "b.eq #0xB534",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "boot lock-warning display fn @0xB4E0",
+      "purpose": "remove 'INFO: LOCK FLAG IS : UNLOCK!!!'"
+    },
+    {
+      "code_offset": "0xB7478",
+      "stock_word": "0x1D000A16",
+      "stock_disasm": "jump table bytes 16 0A 00 1D (state0->0xB804 state1->0xB7D4 state2->0xB7AC state3->0xB820)",
+      "target_word": "0x1D000016",
+      "target_disasm": "jump table bytes 16 00 00 1D (state1 now ->0xB7AC)",
+      "function": "SKIP_VERIFY dispatcher @0xB74C, jump table @0xB7478",
+      "purpose": "route state 1 to the (already silenced) state 2 case: removes 'your device has loaded a different operating system' + 'USER KEY VERIFY SUCCESS' + 10s countdown"
+    },
+    {
+      "code_offset": "0xB7B8",
+      "stock_word": "0x94009DA3",
+      "stock_disasm": "bl #0x32E44",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "SKIP_VERIFY dispatcher @0xB74C (state 2 case)",
+      "purpose": "remove 'WARNNING: LOCK FLAG IS : UNLOCK, SKIP VERIFY!!!' (UART)"
+    },
+    {
+      "code_offset": "0xB7C0",
+      "stock_word": "0x9401F0BD",
+      "stock_disasm": "bl #0x87AB4",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "SKIP_VERIFY dispatcher @0xB74C (state 2 case)",
+      "purpose": "remove 'WARNNING: LOCK FLAG IS : UNLOCK, SKIP VERIFY!!!' (screen)"
+    },
+    {
+      "code_offset": "0x6AC10",
+      "stock_word": "0xB4000060",
+      "stock_disasm": "cbz x0, #0x6AC1C",
+      "target_word": "0xD503201F",
+      "target_disasm": "nop",
+      "function": "loader path (checks [0xb52f90b0+0x60])",
+      "purpose": "skip the null check so the downgrade loader proceeds"
+    },
+    {
+      "code_offset": "0x6AC18",
+      "stock_word": "0xB5FFF820",
+      "stock_disasm": "cbnz x0, #0x6AB1C",
+      "target_word": "0x17FFFFC1",
+      "target_disasm": "b #0x6AB1C",
+      "function": "loader path (checks [0xb52f90b0+0x68])",
+      "purpose": "unconditionally enter the load flow (needed to boot a modified init_boot)"
+    }
+  ],
+  "magic64_limits": {
+    "patch_table_max_bytes": "0x80",
+    "bytes_per_entry": 12,
+    "max_entries": 10,
+    "note": "shellcode supports len_words > 1 but upstream magic_pack.pack() emits len=1 only"
+  },
+  "companion": {
+    "init_boot_b_sukiSU": {
+      "file": "init_boot_b_SUKI_SU_v4.2.0_LKM.img",
+      "sha256": "94cfafda95993aa74ec5ac47a4706cab407b2ad4225c485ab3beb24a52847c23",
+      "note": "SukiSU LKM patched init_boot for slot B"
+    }
+  }
+}
