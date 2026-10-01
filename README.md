@@ -74,7 +74,10 @@ SPL 校验原样的 payload → 通过 → 跳到 `0x200` 的跳转指令 → sh
 > 1. 从 [CVE-2022-38694 工具包](https://github.com/TomKing062/CVE-2022-38694_unlock_bootloader)
 >    取 `spd_dump.exe`、`Channel9.dll`、`Channel.ini`、`fdl1-dl.bin`、`fdl2-dl.bin`、
 >    `custom_exec_no_verify_65012f48.bin`，放到脚本**同目录**或**同目录的 `bin\` 子目录**
-> 2. 设备关机 → 按住 **电源 + 音量上** 不松手插 USB（进 BROM）
+> 2. 设备**完全关机** → 按住 **音量-** 不松手，插入 USB（进 BROM）
+>    - 成功标志：设备管理器出现新的 COM 口，或 `spd_dump` 打印
+>      `BSL_REP_VER: "SPRD3"` / `CMD_CONNECT bootrom`
+>    - 若进不去：换一条**数据线**（不是充电线）、重插、或试 电源+音量上 / 三键同按
 > 3. 双击 `backup_all_partitions.bat`，跟着提示走
 > 4. 备份落在 `backup\T9100_<时间戳>\`，含 `SHA256SUMS.txt`
 >

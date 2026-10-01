@@ -12,7 +12,8 @@ rem  需要的文件（来自 CVE-2022-38694 工具包，见仓库 README）：
 rem    spd_dump.exe  Channel9.dll  Channel.ini
 rem    fdl1-dl.bin   fdl2-dl.bin   custom_exec_no_verify_65012f48.bin
 rem
-rem  进 BROM：关机 -> 按住 电源+音量上 -> 不松手插 USB
+rem  进 BROM：设备完全关机 -> 按住 音量- 不松手 -> 插入 USB
+rem             (若进不去，可再试 电源+音量上 或 三键同按)
 rem ===========================================================================
 
 setlocal EnableExtensions EnableDelayedExpansion
